@@ -26,6 +26,7 @@ Examples:
   psw list all files in current directory
   psw -c "list files in current directory"
   psw -c                    # Copy last command to clipboard
+  psw -q "what is GOPATH?"
   psw -m openrouter/anthropic/claude-3.5-sonnet how to zip a folder`,
 		Args: cobra.ArbitraryArgs,
 		RunE: runRoot,
@@ -34,6 +35,7 @@ Examples:
 	cmd.Flags().StringVarP(&flags.Model, "model", "m", "", "Override default model (format: provider/model)")
 	cmd.Flags().BoolVarP(&flags.Setup, "setup", "s", false, "Run interactive setup wizard")
 	cmd.Flags().BoolVarP(&flags.Copy, "copy", "c", false, "Copy command to clipboard")
+	cmd.Flags().BoolVarP(&flags.Question, "question", "q", false, "General question mode (not PowerShell-specific)")
 
 	// Add --help flag for compatibility
 	cmd.Flags().BoolP("help", "h", false, "Help for psw")
@@ -99,8 +101,13 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to create LLM client: %w", err)
 	}
 
-	// Build messages
-	messages := prompt.BuildMessages(userPrompt)
+	// Build messages based on mode
+	var messages []llm.Message
+	if flags.Question {
+		messages = prompt.BuildQuestionMessages(userPrompt)
+	} else {
+		messages = prompt.BuildMessages(userPrompt)
+	}
 
 	// Send request
 	ctx := context.Background()
@@ -109,33 +116,39 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("LLM request failed: %w", err)
 	}
 
-	// Parse response to extract command and explanation
-	command, explanation := prompt.ParseResponse(response)
-
-	// Save last request/response
-	cfg.LastRequest = &config.LastRequest{
-		Prompt:  userPrompt,
-		Command: command,
-	}
-	if saveErr := cfg.Save(); saveErr != nil {
-		// Non-fatal: just warn
-		fmt.Fprintf(os.Stderr, "Warning: failed to save last request: %v\n", saveErr)
-	}
-
-	// Display response
-	if flags.Copy {
-		// Copy command to clipboard
-		if err := CopyToClipboard(command); err != nil {
-			return fmt.Errorf("failed to copy to clipboard: %w", err)
-		}
-		fmt.Println(command)
-		fmt.Println("[Copied to clipboard]")
+	// Handle response based on mode
+	if flags.Question {
+		// Question mode: display response as-is
+		fmt.Println(response)
 	} else {
-		// Display full response
-		if explanation != "" {
-			fmt.Printf("%s\n\n%s\n", command, explanation)
-		} else {
+		// PowerShell mode: parse and display command/explanation
+		command, explanation := prompt.ParseResponse(response)
+
+		// Save last request/response
+		cfg.LastRequest = &config.LastRequest{
+			Prompt:  userPrompt,
+			Command: command,
+		}
+		if saveErr := cfg.Save(); saveErr != nil {
+			// Non-fatal: just warn
+			fmt.Fprintf(os.Stderr, "Warning: failed to save last request: %v\n", saveErr)
+		}
+
+		// Display response
+		if flags.Copy {
+			// Copy command to clipboard
+			if err := CopyToClipboard(command); err != nil {
+				return fmt.Errorf("failed to copy to clipboard: %w", err)
+			}
 			fmt.Println(command)
+			fmt.Println("[Copied to clipboard]")
+		} else {
+			// Display full response
+			if explanation != "" {
+				fmt.Printf("%s\n\n%s\n", command, explanation)
+			} else {
+				fmt.Println(command)
+			}
 		}
 	}
 

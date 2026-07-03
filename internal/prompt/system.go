@@ -26,17 +26,45 @@ Rules:
 - Never wrap commands in code blocks - use the XML tags above
 - Never add any text before <command> or after </explanation>`
 
-// GetSystemPrompt returns the system prompt for the LLM
+const questionSystemPrompt = `You are a helpful assistant answering questions in a terminal environment.
+
+Rules:
+- Keep answers brief and concise (2-4 sentences max)
+- Terminal is not suitable for reading long texts
+- Be direct and to the point
+- Use plain text, avoid markdown formatting
+- If showing code, keep it minimal`
+
+// GetSystemPrompt returns the system prompt for PowerShell commands
 func GetSystemPrompt() string {
 	return defaultSystemPrompt
 }
 
-// BuildMessages creates the message array for the LLM request
+// GetQuestionPrompt returns the system prompt for general questions
+func GetQuestionPrompt() string {
+	return questionSystemPrompt
+}
+
+// BuildMessages creates the message array for the LLM request (PowerShell mode)
 func BuildMessages(userPrompt string) []llm.Message {
 	return []llm.Message{
 		{
 			Role:    "system",
 			Content: GetSystemPrompt(),
+		},
+		{
+			Role:    "user",
+			Content: userPrompt,
+		},
+	}
+}
+
+// BuildQuestionMessages creates the message array for general questions
+func BuildQuestionMessages(userPrompt string) []llm.Message {
+	return []llm.Message{
+		{
+			Role:    "system",
+			Content: GetQuestionPrompt(),
 		},
 		{
 			Role:    "user",

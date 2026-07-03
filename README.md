@@ -40,6 +40,7 @@ psw [flags] [prompt...]
 
 - `-s, --setup` - Run interactive setup wizard
 - `-c, --copy` - Copy command to clipboard
+- `-q, --question` - General question mode (not PowerShell-specific)
 - `-m, --model string` - Override default model (format: `provider/model`)
 - `-h, --help` - Show help
 
@@ -57,6 +58,9 @@ psw -c "list files in current directory"
 
 # Copy last command to clipboard (no prompt needed)
 psw -c
+
+# General question (not PowerShell-specific)
+psw -q "what is GOPATH?"
 
 # Use specific model
 psw -m openrouter/anthropic/claude-3.5-sonnet how to rename multiple files
