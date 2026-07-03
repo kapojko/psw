@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"os"
@@ -11,13 +12,15 @@ import (
 
 	"github.com/kapojko/psw/internal/config"
 	"github.com/kapojko/psw/internal/llm"
+	"github.com/kapojko/psw/internal/powershell"
 	"github.com/kapojko/psw/internal/prompt"
 )
 
 var (
-	commandColor     = color.New(color.FgHiMagenta) // orange (bright yellow)
-	descriptionColor = color.New(color.FgWhite)     // dark grey
-	copiedColor      = color.New(color.FgHiBlue)    // medium grey
+	commandColor        = color.New(color.FgHiMagenta) // orange (bright yellow)
+	descriptionColor    = color.New(color.FgWhite)     // dark grey
+	copiedColor         = color.New(color.FgHiBlue)    // medium grey
+	invalidCommandColor = color.New(color.FgRed)       // red for invalid syntax
 )
 
 // NewRootCommand creates the root cobra command
@@ -34,7 +37,8 @@ Examples:
   psw -c "list files in current directory"
   psw -c                    # Copy last command to clipboard
   psw -q "what is GOPATH?"
-  psw -m openrouter/anthropic/claude-3.5-sonnet how to zip a folder`,
+  psw -m openrouter/anthropic/claude-3.5-sonnet how to zip a folder
+  psw -e "list files"       # Get command and optionally execute it`,
 		Args: cobra.ArbitraryArgs,
 		RunE: runRoot,
 	}
@@ -43,6 +47,7 @@ Examples:
 	cmd.Flags().BoolVarP(&flags.Setup, "setup", "s", false, "Run interactive setup wizard")
 	cmd.Flags().BoolVarP(&flags.Copy, "copy", "c", false, "Copy command to clipboard")
 	cmd.Flags().BoolVarP(&flags.Question, "question", "q", false, "General question mode (not PowerShell-specific)")
+	cmd.Flags().BoolVarP(&flags.Exec, "exec", "e", false, "Execute the command after syntax check")
 
 	// Add --help flag for compatibility
 	cmd.Flags().BoolP("help", "h", false, "Help for psw")
@@ -53,6 +58,11 @@ Examples:
 func runRoot(cmd *cobra.Command, args []string) error {
 	if flags.Setup {
 		return RunConfig()
+	}
+
+	// Validate mutually exclusive flags
+	if flags.Copy && flags.Exec {
+		return fmt.Errorf("cannot use --copy (-c) and --exec (-e) together")
 	}
 
 	// Load config
@@ -70,7 +80,7 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		if err := CopyToClipboard(cfg.LastRequest.Command); err != nil {
 			return fmt.Errorf("failed to copy to clipboard: %w", err)
 		}
-		printOutput(cfg.LastRequest.Command, "", true)
+		printOutput(cfg.LastRequest.Command, "", true, true, nil)
 		return nil
 	}
 
@@ -140,24 +150,55 @@ func runRoot(cmd *cobra.Command, args []string) error {
 			fmt.Fprintf(os.Stderr, "Warning: failed to save last request: %v\n", saveErr)
 		}
 
-		// Display response
+		// Check syntax
+		syntaxValid, syntaxErrors := powershell.CheckSyntax(command)
+
 		if flags.Copy {
 			// Copy command to clipboard
 			if err := CopyToClipboard(command); err != nil {
 				return fmt.Errorf("failed to copy to clipboard: %w", err)
 			}
-			printOutput(command, "", true)
+			printOutput(command, explanation, true, syntaxValid, syntaxErrors)
+		} else if flags.Exec {
+			// Execute mode: display command with syntax info
+			printOutput(command, explanation, false, syntaxValid, syntaxErrors)
+
+			if !syntaxValid {
+				return nil
+			}
+
+			// Prompt for execution
+			fmt.Print("Execute command? [e/y to execute, any other to cancel]: ")
+			reader := bufio.NewReader(os.Stdin)
+			input, _ := reader.ReadString('\n')
+			input = strings.TrimSpace(strings.ToLower(input))
+
+			if input == "e" || input == "y" {
+				fmt.Println()
+				if err := powershell.Execute(command); err != nil {
+					return fmt.Errorf("execution failed: %w", err)
+				}
+			}
 		} else {
 			// Display full response
-			printOutput(command, explanation, false)
+			printOutput(command, explanation, false, syntaxValid, syntaxErrors)
 		}
 	}
 
 	return nil
 }
 
-func printOutput(command, explanation string, copied bool) {
-	commandColor.Println(command)
+func printOutput(command, explanation string, copied bool, syntaxValid bool, syntaxErrors []string) {
+	if !syntaxValid {
+		invalidCommandColor.Print("! Syntax error")
+		if len(syntaxErrors) > 0 {
+			invalidCommandColor.Printf(": %s", strings.TrimSpace(syntaxErrors[0]))
+		}
+		fmt.Println()
+		invalidCommandColor.Println(command)
+	} else {
+		commandColor.Println(command)
+	}
 	if copied {
 		copiedColor.Println("[Copied to clipboard]")
 	}

@@ -7,10 +7,11 @@ CLI utility that sends PowerShell-related questions to an LLM and returns comman
 - github.com/spf13/cobra - CLI framework
 - github.com/sashabaranov/go-openai - OpenAI-compatible API client
 
-## Build & Run
+## Build, Test & Run
 
 ```bash
 go build ./cmd/psw
+go test ./...
 ./psw --help
 ```
 

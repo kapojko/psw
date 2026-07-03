@@ -6,6 +6,7 @@ type Flags struct {
 	Setup    bool
 	Copy     bool
 	Question bool
+	Exec     bool
 }
 
 var flags Flags

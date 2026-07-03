@@ -19,6 +19,9 @@ psw/
 │   │   ├── client.go         # Client interface definition
 │   │   ├── openrouter.go     # OpenRouter provider
 │   │   └── lmstudio.go       # LM Studio provider
+│   ├── powershell/           # PowerShell interaction (no script execution)
+│   │   ├── syntax.go         # Syntax validation via Parser API
+│   │   └── execute.go        # Command execution with output streaming
 │   └── prompt/               # Prompt construction
 │       └── system.go         # System prompt and message building
 ├── docs/
@@ -36,14 +39,14 @@ Entry point. Imports and executes the CLI package.
 
 ### internal/cli
 Handles all user interaction:
-- **flags.go**: Defines CLI flags (--setup, --copy, --model, --help)
+- **flags.go**: Defines CLI flags (--setup, --copy, --model, --exec, --help)
 - **config.go**: Interactive setup wizard with 4 steps:
   0. Proxy setup (optional HTTP proxy for OpenRouter)
   1. OpenRouter API key setup
   2. LM Studio enable/disable
   3. Default model selection (fetches available models)
 - **clipboard.go**: Copy command to Windows clipboard using PowerShell
-- **root.go**: Main command execution - parses args, loads config, creates LLM client, sends request, parses response
+- **root.go**: Main command execution - parses args, loads config, creates LLM client, sends request, parses response, checks syntax, optionally executes
 
 ### internal/config
 Manages application configuration:
@@ -56,6 +59,11 @@ LLM client abstraction:
 - **client.go**: Client interface with ChatCompletion and ListModels methods
 - **openrouter.go**: OpenRouter implementation using go-openai library with direct HTTP for model listing
 - **lmstudio.go**: LM Studio implementation (local OpenAI-compatible API)
+
+### internal/powershell
+PowerShell interaction utilities — syntax validation and command execution:
+- **syntax.go**: Validates PowerShell command syntax using `[System.Management.Automation.Language.Parser]::ParseInput()` without executing scripts
+- **execute.go**: Executes PowerShell commands with real-time output streaming to host console
 
 ### internal/prompt
 Prompt construction and response parsing:
