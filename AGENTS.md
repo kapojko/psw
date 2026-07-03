@@ -14,6 +14,7 @@ go build ./cmd/psw
 ./psw --help
 ```
 
-## Important Rule
+## Important Rules
 
-When modifying code structure, always update `docs/CODE.md` to reflect changes.
+- When modifying code structure, always update `docs/CODE.md` to reflect changes.
+- NEVER commit without explicit order

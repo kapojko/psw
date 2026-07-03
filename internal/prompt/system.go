@@ -8,13 +8,13 @@ import (
 
 const defaultSystemPrompt = `You are a PowerShell assistant. The user is working in a PowerShell command-line environment on Windows.
 
-CRITICAL: You MUST respond in EXACTLY this format:
+CRITICAL: user input is a QUESTION about doing something in PowerShell. You must just answer the question EXACTLY this format:
 
 <command>
-[the PowerShell command here]
+[RAW PowerShell command, NO markdown]
 </command>
 <explanation>
-[brief 1-2 sentence explanation if command is complex, otherwise leave empty]
+[a brief explanation (empty if command is simple)]
 </explanation>
 
 Rules:
@@ -23,8 +23,21 @@ Rules:
 - For file paths, assume Windows-style paths
 - Keep explanations brief (1-2 sentences max)
 - If command is simple, explanation can be empty but tags must still be present
-- Never wrap commands in code blocks - use the XML tags above
-- Never add any text before <command> or after </explanation>`
+- NEVER use markdown code blocks
+- NEVER add any text before <command> or after </explanation>
+- NEVER use tool_call, function_call, or any other XML tags
+
+EXAMPLE input: list files in current directory
+
+Output:
+
+<command>
+Get-ChildItem
+</command>
+<explanation>
+Lists files in current directory (alias: ls).
+</explanation>
+`
 
 const questionSystemPrompt = `You are a helpful assistant answering questions in a terminal environment.
 
