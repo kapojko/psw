@@ -6,11 +6,18 @@ import (
 	"os"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
 	"github.com/kapojko/psw/internal/config"
 	"github.com/kapojko/psw/internal/llm"
 	"github.com/kapojko/psw/internal/prompt"
+)
+
+var (
+	commandColor     = color.New(color.FgHiMagenta) // orange (bright yellow)
+	descriptionColor = color.New(color.FgWhite)     // dark grey
+	copiedColor      = color.New(color.FgHiBlue)    // medium grey
 )
 
 // NewRootCommand creates the root cobra command
@@ -63,8 +70,7 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		if err := CopyToClipboard(cfg.LastRequest.Command); err != nil {
 			return fmt.Errorf("failed to copy to clipboard: %w", err)
 		}
-		fmt.Println(cfg.LastRequest.Command)
-		fmt.Println("[Copied to clipboard]")
+		printOutput(cfg.LastRequest.Command, "", true)
 		return nil
 	}
 
@@ -140,19 +146,25 @@ func runRoot(cmd *cobra.Command, args []string) error {
 			if err := CopyToClipboard(command); err != nil {
 				return fmt.Errorf("failed to copy to clipboard: %w", err)
 			}
-			fmt.Println(command)
-			fmt.Println("[Copied to clipboard]")
+			printOutput(command, "", true)
 		} else {
 			// Display full response
-			if explanation != "" {
-				fmt.Printf("%s\n\n%s\n", command, explanation)
-			} else {
-				fmt.Println(command)
-			}
+			printOutput(command, explanation, false)
 		}
 	}
 
 	return nil
+}
+
+func printOutput(command, explanation string, copied bool) {
+	commandColor.Println(command)
+	if copied {
+		copiedColor.Println("[Copied to clipboard]")
+	}
+	if explanation != "" {
+		fmt.Println()
+		descriptionColor.Println(explanation)
+	}
 }
 
 // Execute runs the CLI
