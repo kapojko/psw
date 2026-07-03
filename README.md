@@ -55,6 +55,9 @@ psw list all files recursively
 # Copy command to clipboard
 psw -c "list files in current directory"
 
+# Copy last command to clipboard (no prompt needed)
+psw -c
+
 # Use specific model
 psw -m openrouter/anthropic/claude-3.5-sonnet how to rename multiple files
 ```

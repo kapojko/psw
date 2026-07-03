@@ -11,6 +11,13 @@ type Config struct {
 	Proxy        *ProxyConfig    `json:"proxy,omitempty"`
 	Providers    ProvidersConfig `json:"providers"`
 	DefaultModel *ModelRef       `json:"default_model,omitempty"`
+	LastRequest  *LastRequest    `json:"last_request,omitempty"`
+}
+
+// LastRequest stores the last request and response for -c functionality
+type LastRequest struct {
+	Prompt  string `json:"prompt"`
+	Command string `json:"command"`
 }
 
 // ProxyConfig holds proxy configuration

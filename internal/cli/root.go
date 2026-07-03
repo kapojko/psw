@@ -25,6 +25,7 @@ Examples:
   psw "./dir1" get used size
   psw list all files in current directory
   psw -c "list files in current directory"
+  psw -c                    # Copy last command to clipboard
   psw -m openrouter/anthropic/claude-3.5-sonnet how to zip a folder`,
 		Args: cobra.ArbitraryArgs,
 		RunE: runRoot,
@@ -51,6 +52,24 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
+	// Handle -c with empty prompt: copy last command
+	userPrompt := strings.Join(args, " ")
+	if flags.Copy && userPrompt == "" {
+		if cfg.LastRequest == nil || cfg.LastRequest.Command == "" {
+			return fmt.Errorf("no previous request found. Run a query first")
+		}
+		if err := CopyToClipboard(cfg.LastRequest.Command); err != nil {
+			return fmt.Errorf("failed to copy to clipboard: %w", err)
+		}
+		fmt.Println(cfg.LastRequest.Command)
+		fmt.Println("[Copied to clipboard]")
+		return nil
+	}
+
+	if userPrompt == "" {
+		return fmt.Errorf("no prompt provided. Usage: psw [flags] [prompt...]")
+	}
+
 	// Determine model to use
 	var modelRef config.ModelRef
 	if flags.Model != "" {
@@ -62,12 +81,6 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		modelRef = *cfg.DefaultModel
 	} else {
 		return fmt.Errorf("no model specified and no default model configured. Run 'psw -s' to set up")
-	}
-
-	// Build user prompt from args
-	userPrompt := strings.Join(args, " ")
-	if userPrompt == "" {
-		return fmt.Errorf("no prompt provided. Usage: psw [flags] [prompt...]")
 	}
 
 	// Get provider config
@@ -98,6 +111,16 @@ func runRoot(cmd *cobra.Command, args []string) error {
 
 	// Parse response to extract command and explanation
 	command, explanation := prompt.ParseResponse(response)
+
+	// Save last request/response
+	cfg.LastRequest = &config.LastRequest{
+		Prompt:  userPrompt,
+		Command: command,
+	}
+	if saveErr := cfg.Save(); saveErr != nil {
+		// Non-fatal: just warn
+		fmt.Fprintf(os.Stderr, "Warning: failed to save last request: %v\n", saveErr)
+	}
 
 	// Display response
 	if flags.Copy {
