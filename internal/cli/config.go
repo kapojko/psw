@@ -236,7 +236,7 @@ func fetchAvailableModels(ctx context.Context, cfg *config.Config) ([]llm.Model,
 	var allModels []llm.Model
 
 	if cfg.Providers.OpenRouter.IsEnabled() {
-		client := llm.NewOpenRouterClient(cfg.Providers.OpenRouter, cfg.Proxy)
+		client := llm.NewOpenRouterClient(cfg.Providers.OpenRouter, cfg.Proxy, false)
 		models, err := client.ListModels(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("openrouter: %w", err)

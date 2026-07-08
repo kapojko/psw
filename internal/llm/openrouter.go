@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"time"
@@ -21,10 +22,11 @@ type OpenRouterClient struct {
 	config     *config.OpenRouterConfig
 	client     *openai.Client
 	httpClient *http.Client
+	verbose    bool
 }
 
 // NewOpenRouterClient creates a new OpenRouter client with optional proxy
-func NewOpenRouterClient(cfg *config.OpenRouterConfig, proxyCfg *config.ProxyConfig) *OpenRouterClient {
+func NewOpenRouterClient(cfg *config.OpenRouterConfig, proxyCfg *config.ProxyConfig, verbose bool) *OpenRouterClient {
 	clientConfig := openai.DefaultConfig(cfg.APIKey)
 	clientConfig.BaseURL = openRouterBaseURL
 
@@ -36,13 +38,23 @@ func NewOpenRouterClient(cfg *config.OpenRouterConfig, proxyCfg *config.ProxyCon
 			httpClient.Transport = &http.Transport{
 				Proxy: http.ProxyURL(proxyURL),
 			}
+			if verbose {
+				log.Printf("[DEBUG] Proxy configured: %s", proxyCfg.URL)
+			}
+		} else if verbose {
+			log.Printf("[DEBUG] Failed to parse proxy URL: %v", err)
 		}
+	} else if verbose {
+		log.Printf("[DEBUG] Proxy not enabled or not configured")
 	}
+
+	clientConfig.HTTPClient = httpClient
 
 	return &OpenRouterClient{
 		config:     cfg,
 		client:     openai.NewClientWithConfig(clientConfig),
 		httpClient: httpClient,
+		verbose:    verbose,
 	}
 }
 

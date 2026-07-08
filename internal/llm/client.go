@@ -35,10 +35,10 @@ type Client interface {
 }
 
 // NewClient creates an LLM client for the given provider config
-func NewClient(providerConfig config.ProviderConfig, proxyConfig *config.ProxyConfig) (Client, error) {
+func NewClient(providerConfig config.ProviderConfig, proxyConfig *config.ProxyConfig, verbose bool) (Client, error) {
 	switch cfg := providerConfig.(type) {
 	case *config.OpenRouterConfig:
-		return NewOpenRouterClient(cfg, proxyConfig), nil
+		return NewOpenRouterClient(cfg, proxyConfig, verbose), nil
 	case *config.LMStudioConfig:
 		return NewLMStudioClient(cfg), nil
 	default:

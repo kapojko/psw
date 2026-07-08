@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -48,6 +49,7 @@ Examples:
 	cmd.Flags().BoolVarP(&flags.Copy, "copy", "c", false, "Copy command to clipboard")
 	cmd.Flags().BoolVarP(&flags.Question, "question", "q", false, "General question mode (not PowerShell-specific)")
 	cmd.Flags().BoolVarP(&flags.Exec, "exec", "e", false, "Execute the command after syntax check")
+	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", false, "Verbose output (debug info)")
 
 	// Add --help flag for compatibility
 	cmd.Flags().BoolP("help", "h", false, "Help for psw")
@@ -101,6 +103,10 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("no model specified and no default model configured. Run 'psw -s' to set up")
 	}
 
+	if flags.Verbose {
+		log.Printf("[DEBUG] Using model: %s/%s", modelRef.Provider, modelRef.ModelID)
+	}
+
 	// Get provider config
 	providerCfg := cfg.Providers.GetProvider(modelRef.Provider)
 	if providerCfg == nil {
@@ -112,7 +118,7 @@ func runRoot(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create LLM client
-	client, err := llm.NewClient(providerCfg, cfg.Proxy)
+	client, err := llm.NewClient(providerCfg, cfg.Proxy, flags.Verbose)
 	if err != nil {
 		return fmt.Errorf("failed to create LLM client: %w", err)
 	}

@@ -7,6 +7,7 @@ type Flags struct {
 	Copy     bool
 	Question bool
 	Exec     bool
+	Verbose  bool
 }
 
 var flags Flags
