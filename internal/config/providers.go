@@ -7,7 +7,7 @@ type ProviderType string
 
 const (
 	ProviderOpenRouter ProviderType = "openrouter"
-	ProviderLMStudio   ProviderType = "lmstudio"
+	ProviderOpenAICompatible ProviderType = "openai-compatible"
 )
 
 // ProviderConfig is the interface all provider configs must implement
@@ -34,26 +34,26 @@ func (c *OpenRouterConfig) GetDisplayName() string {
 	return "OpenRouter"
 }
 
-// LMStudioConfig holds LM Studio-specific configuration
-type LMStudioConfig struct {
-	Enabled bool   `json:"enabled"`
-	BaseURL string `json:"base_url"`
+// OpenAICompatibleConfig holds configuration for an OpenAI-compatible provider
+type OpenAICompatibleConfig struct {
+	APIKey   string `json:"api_key,omitempty"`
+	BaseURL  string `json:"base_url"`
 }
 
-func (c *LMStudioConfig) GetType() ProviderType {
-	return ProviderLMStudio
+func (c *OpenAICompatibleConfig) GetType() ProviderType {
+	return ProviderOpenAICompatible
 }
 
-func (c *LMStudioConfig) IsEnabled() bool {
-	return c.Enabled
+func (c *OpenAICompatibleConfig) IsEnabled() bool {
+	return c.BaseURL != ""
 }
 
-func (c *LMStudioConfig) GetDisplayName() string {
-	return "LM Studio"
+func (c *OpenAICompatibleConfig) GetDisplayName() string {
+	return "OpenAI Compatible"
 }
 
-// GetBaseURL returns the base URL, defaulting to localhost if not set
-func (c *LMStudioConfig) GetBaseURL() string {
+// GetBaseURL returns the endpoint, defaulting to localhost if not set
+func (c *OpenAICompatibleConfig) GetBaseURL() string {
 	if c.BaseURL == "" {
 		return "http://localhost:1234/v1"
 	}
@@ -76,7 +76,7 @@ func ParseModelRef(s string) (ModelRef, error) {
 	for i, c := range s {
 		if c == '/' {
 			provider := ProviderType(s[:i])
-			if provider != ProviderOpenRouter && provider != ProviderLMStudio {
+			if provider != ProviderOpenRouter && provider != ProviderOpenAICompatible {
 				return ModelRef{}, fmt.Errorf("unknown provider: %s", provider)
 			}
 			return ModelRef{
@@ -90,8 +90,8 @@ func ParseModelRef(s string) (ModelRef, error) {
 
 // ProvidersConfig holds configuration for all providers
 type ProvidersConfig struct {
-	OpenRouter *OpenRouterConfig `json:"openrouter,omitempty"`
-	LMStudio   *LMStudioConfig   `json:"lmstudio,omitempty"`
+	OpenRouter          *OpenRouterConfig `json:"openrouter,omitempty"`
+	OpenAICompatible    *OpenAICompatibleConfig `json:"openai-compatible,omitempty"`
 }
 
 // GetProviders returns all provider configs
@@ -100,8 +100,8 @@ func (p *ProvidersConfig) GetProviders() []ProviderConfig {
 	if p.OpenRouter != nil {
 		providers = append(providers, p.OpenRouter)
 	}
-	if p.LMStudio != nil {
-		providers = append(providers, p.LMStudio)
+	if p.OpenAICompatible != nil {
+		providers = append(providers, p.OpenAICompatible)
 	}
 	return providers
 }
@@ -111,8 +111,8 @@ func (p *ProvidersConfig) GetProvider(providerType ProviderType) ProviderConfig 
 	switch providerType {
 	case ProviderOpenRouter:
 		return p.OpenRouter
-	case ProviderLMStudio:
-		return p.LMStudio
+	case ProviderOpenAICompatible:
+		return p.OpenAICompatible
 	default:
 		return nil
 	}

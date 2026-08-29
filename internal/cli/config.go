@@ -35,8 +35,8 @@ func RunConfig() error {
 		return err
 	}
 
-	// Step 2: LM Studio config
-	if err := configureLMStudio(cfg); err != nil {
+	// Step 2: OpenAI Compatible config
+	if err := configureOpenAICompatible(cfg); err != nil {
 		return err
 	}
 
@@ -146,31 +146,58 @@ func configureOpenRouter(cfg *config.Config) error {
 	return nil
 }
 
-func configureLMStudio(cfg *config.Config) error {
-	fmt.Println("2. LM Studio Setup")
+func configureOpenAICompatible(cfg *config.Config) error {
+	fmt.Println("2. OpenAI Compatible Setup")
 
-	status := "Disabled"
-	if cfg.Providers.LMStudio.Enabled {
-		status = "Enabled"
+	if cfg.Providers.OpenAICompatible.BaseURL != "" {
+		fmt.Printf("   Current endpoint: %s\n", cfg.Providers.OpenAICompatible.GetBaseURL())
+	} else {
+		fmt.Println("   Current endpoint: Not configured")
 	}
-	fmt.Printf("   Current status: %s\n", status)
+
+	if cfg.Providers.OpenAICompatible.APIKey != "" {
+		fmt.Printf("   Current API Key: %s\n", maskAPIKey(cfg.Providers.OpenAICompatible.APIKey))
+	} else {
+		fmt.Println("   Current API Key: Not configured")
+	}
 
 	fmt.Println("   Options:")
-	fmt.Println("   [1] Enable")
-	fmt.Println("   [2] Disable")
-	fmt.Println("   [3] Keep current (press ENTER)")
+	fmt.Println("   [1] Configure endpoint")
+	fmt.Println("   [2] Set API Key (optional)")
+	fmt.Println("   [3] Remove API Key")
+	fmt.Println("   [4] Keep current (press ENTER)")
 
-	choice, err := readChoiceOrKeep(1, 3, 3)
+	choice, err := readChoiceOrKeep(1, 4, 4)
 	if err != nil {
 		return err
 	}
 
 	switch choice {
 	case 1:
-		cfg.Providers.LMStudio.Enabled = true
+		fmt.Print("   Enter endpoint (e.g. http://127.0.0.1:1234/v1): ")
+		endpoint, err := readLine()
+		if err != nil {
+			return err
+		}
+		endpoint = strings.TrimSpace(endpoint)
+		if endpoint == "" {
+			return fmt.Errorf("endpoint cannot be empty")
+		}
+		cfg.Providers.OpenAICompatible.BaseURL = endpoint
 	case 2:
-		cfg.Providers.LMStudio.Enabled = false
+		fmt.Print("   Enter API Key: ")
+		key, err := readLine()
+		if err != nil {
+			return err
+		}
+		key = strings.TrimSpace(key)
+		if key == "" {
+			return fmt.Errorf("API key cannot be empty")
+		}
+		cfg.Providers.OpenAICompatible.APIKey = key
 	case 3:
+		cfg.Providers.OpenAICompatible.APIKey = ""
+	case 4:
 		// Keep current
 	}
 
@@ -244,12 +271,12 @@ func fetchAvailableModels(ctx context.Context, cfg *config.Config) ([]llm.Model,
 		allModels = append(allModels, models...)
 	}
 
-	if cfg.Providers.LMStudio.IsEnabled() {
-		client := llm.NewLMStudioClient(cfg.Providers.LMStudio)
+	if cfg.Providers.OpenAICompatible.IsEnabled() {
+		client := llm.NewOpenAICompatibleClient(cfg.Providers.OpenAICompatible)
 		models, err := client.ListModels(ctx)
 		if err != nil {
-			// LM Studio might be offline, don't fail
-			fmt.Printf("   Warning: LM Studio not available: %v\n", err)
+			// OpenAI Compatible provider might be offline, don't fail
+			fmt.Printf("   Warning: OpenAI Compatible provider not available: %v\n", err)
 		} else {
 			allModels = append(allModels, models...)
 		}

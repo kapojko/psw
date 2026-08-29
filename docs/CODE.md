@@ -18,7 +18,7 @@ psw/
 │   ├── llm/                  # LLM client implementations
 │   │   ├── client.go         # Client interface definition
 │   │   ├── openrouter.go     # OpenRouter provider
-│   │   └── lmstudio.go       # LM Studio provider
+│   │   └── openai-compatible.go  # OpenAI Compatible provider
 │   ├── powershell/           # PowerShell interaction (no script execution)
 │   │   ├── syntax.go         # Syntax validation via Parser API
 │   │   └── execute.go        # Command execution with output streaming
@@ -43,7 +43,7 @@ Handles all user interaction:
 - **config.go**: Interactive setup wizard with 4 steps:
   0. Proxy setup (optional HTTP proxy for OpenRouter)
   1. OpenRouter API key setup
-  2. LM Studio enable/disable
+  2. OpenAI Compatible endpoint / API key
   3. Default model selection (fetches available models)
 - **clipboard.go**: Copy command to Windows clipboard using PowerShell
 - **root.go**: Main command execution - parses args, loads config, creates LLM client, sends request, parses response, checks syntax, optionally executes
@@ -51,14 +51,14 @@ Handles all user interaction:
 ### internal/config
 Manages application configuration:
 - **config.go**: Main Config struct with Load/Save methods. Config stored in `%APPDATA%/psw/config.json`
-- **providers.go**: Provider types (OpenRouter, LM Studio), ModelRef type with parsing
+- **providers.go**: Provider types (OpenRouter, OpenAI Compatible), ModelRef type with parsing
 - **paths.go**: Cross-platform config directory resolution
 
 ### internal/llm
 LLM client abstraction:
 - **client.go**: Client interface with ChatCompletion and ListModels methods
 - **openrouter.go**: OpenRouter implementation using go-openai library with direct HTTP for model listing
-- **lmstudio.go**: LM Studio implementation (local OpenAI-compatible API)
+- **openai-compatible.go**: OpenAI Compatible implementation (local server)
 
 ### internal/powershell
 PowerShell interaction utilities — syntax validation and command execution:
@@ -120,9 +120,9 @@ Lists all files recursively in the current directory
     "openrouter": {
       "api_key": "sk-..."
     },
-    "lmstudio": {
-      "enabled": true,
-      "base_url": "http://localhost:1234/v1"
+    "openai-compatible": {
+      "api_key": "sk-...",
+      "base_url": "http://127.0.0.1:1234/v1"
     }
   },
   "default_model": {

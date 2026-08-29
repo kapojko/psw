@@ -38,8 +38,8 @@ func Load() (*Config, error) {
 		if os.IsNotExist(err) {
 			return &Config{
 				Providers: ProvidersConfig{
-					OpenRouter: &OpenRouterConfig{},
-					LMStudio:   &LMStudioConfig{BaseURL: "http://localhost:1234/v1"},
+				OpenRouter:       &OpenRouterConfig{},
+				OpenAICompatible: &OpenAICompatibleConfig{},
 				},
 			}, nil
 		}
@@ -55,8 +55,8 @@ func Load() (*Config, error) {
 	if cfg.Providers.OpenRouter == nil {
 		cfg.Providers.OpenRouter = &OpenRouterConfig{}
 	}
-	if cfg.Providers.LMStudio == nil {
-		cfg.Providers.LMStudio = &LMStudioConfig{BaseURL: "http://localhost:1234/v1"}
+	if cfg.Providers.OpenAICompatible == nil {
+		cfg.Providers.OpenAICompatible = &OpenAICompatibleConfig{}
 	}
 
 	return &cfg, nil

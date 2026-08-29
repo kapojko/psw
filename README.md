@@ -72,7 +72,7 @@ Run `psw -s` to set up:
 
 1. **Proxy** - Optional HTTP proxy for OpenRouter API
 2. **OpenRouter** - Enter API key from [openrouter.ai](https://openrouter.ai)
-3. **LM Studio** - Enable if running [LM Studio](https://lmstudio.ai) locally
+3. **OpenAI Compatible** - Configure endpoint (and optional API key) for a local OpenAI-compatible server
 4. **Default Model** - Select from available models
 
 Press ENTER at any prompt to keep the existing value.
@@ -84,7 +84,7 @@ Config is saved to `%APPDATA%/psw/config.json`
 | Provider | Setup |
 |----------|-------|
 | OpenRouter | API key from openrouter.ai |
-| LM Studio | Local server on localhost:1234 |
+| OpenAI Compatible | Local OpenAI-compatible server |
 
 ## How It Works
 

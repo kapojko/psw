@@ -9,25 +9,26 @@ import (
 	"github.com/kapojko/psw/internal/config"
 )
 
-// LMStudioClient implements the Client interface for LM Studio
-type LMStudioClient struct {
-	config *config.LMStudioConfig
+// OpenAICompatibleClient implements the Client interface for an OpenAI-compatible
+// provider (e.g. a locally running OpenAI-compatible server).
+type OpenAICompatibleClient struct {
+	config *config.OpenAICompatibleConfig
 	client *openai.Client
 }
 
-// NewLMStudioClient creates a new LM Studio client
-func NewLMStudioClient(cfg *config.LMStudioConfig) *LMStudioClient {
-	clientConfig := openai.DefaultConfig("")
+// NewOpenAICompatibleClient creates a new OpenAI-compatible client
+func NewOpenAICompatibleClient(cfg *config.OpenAICompatibleConfig) *OpenAICompatibleClient {
+	clientConfig := openai.DefaultConfig(cfg.APIKey)
 	clientConfig.BaseURL = cfg.GetBaseURL()
 
-	return &LMStudioClient{
+	return &OpenAICompatibleClient{
 		config: cfg,
 		client: openai.NewClientWithConfig(clientConfig),
 	}
 }
 
 // ChatCompletion implements Client.ChatCompletion
-func (c *LMStudioClient) ChatCompletion(ctx context.Context, model string, messages []Message) (string, error) {
+func (c *OpenAICompatibleClient) ChatCompletion(ctx context.Context, model string, messages []Message) (string, error) {
 	msgs := make([]openai.ChatCompletionMessage, len(messages))
 	for i, m := range messages {
 		msgs[i] = openai.ChatCompletionMessage{
@@ -41,21 +42,21 @@ func (c *LMStudioClient) ChatCompletion(ctx context.Context, model string, messa
 		Messages: msgs,
 	})
 	if err != nil {
-		return "", fmt.Errorf("lmstudio API error: %w", err)
+		return "", fmt.Errorf("openai-compatible API error: %w", err)
 	}
 
 	if len(resp.Choices) == 0 {
-		return "", fmt.Errorf("no response from lmstudio")
+		return "", fmt.Errorf("no response from openai-compatible provider")
 	}
 
 	return resp.Choices[0].Message.Content, nil
 }
 
 // ListModels implements Client.ListModels
-func (c *LMStudioClient) ListModels(ctx context.Context) ([]Model, error) {
+func (c *OpenAICompatibleClient) ListModels(ctx context.Context) ([]Model, error) {
 	models, err := c.client.ListModels(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list lmstudio models: %w", err)
+		return nil, fmt.Errorf("failed to list openai-compatible models: %w", err)
 	}
 
 	result := make([]Model, 0, len(models.Models))
@@ -63,7 +64,7 @@ func (c *LMStudioClient) ListModels(ctx context.Context) ([]Model, error) {
 		result = append(result, Model{
 			ID:          m.ID,
 			DisplayName: m.ID,
-			Provider:    config.ProviderLMStudio,
+			Provider:    config.ProviderOpenAICompatible,
 		})
 	}
 

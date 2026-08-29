@@ -39,8 +39,8 @@ func NewClient(providerConfig config.ProviderConfig, proxyConfig *config.ProxyCo
 	switch cfg := providerConfig.(type) {
 	case *config.OpenRouterConfig:
 		return NewOpenRouterClient(cfg, proxyConfig, verbose), nil
-	case *config.LMStudioConfig:
-		return NewLMStudioClient(cfg), nil
+	case *config.OpenAICompatibleConfig:
+		return NewOpenAICompatibleClient(cfg), nil
 	default:
 		return nil, fmt.Errorf("unsupported provider type: %T", providerConfig)
 	}
