@@ -40,7 +40,12 @@ func RunConfig() error {
 		return err
 	}
 
-	// Step 3: Default model selection
+	// Step 3: StepFun config
+	if err := configureStepFun(cfg); err != nil {
+		return err
+	}
+
+	// Step 4: Default model selection
 	if err := configureDefaultModel(cfg); err != nil {
 		return err
 	}
@@ -205,8 +210,54 @@ func configureOpenAICompatible(cfg *config.Config) error {
 	return nil
 }
 
+func configureStepFun(cfg *config.Config) error {
+	fmt.Println("3. StepFun Setup")
+
+	if cfg.Providers.StepFun.APIKey != "" {
+		masked := maskAPIKey(cfg.Providers.StepFun.APIKey)
+		fmt.Printf("   Current API Key: %s\n", masked)
+	} else {
+		fmt.Println("   Current API Key: Not configured")
+	}
+
+	fmt.Println("   Options:")
+	fmt.Println("   [1] Enter/Update API Key")
+	fmt.Println("   [2] Remove API Key (disable provider)")
+	fmt.Println("   [3] Keep current (press ENTER)")
+
+	choice, err := readChoiceOrKeep(1, 3, 3)
+	if err != nil {
+		return err
+	}
+
+	switch choice {
+	case 1:
+		fmt.Print("   Enter API Key: ")
+		key, err := readLine()
+		if err != nil {
+			return err
+		}
+		key = strings.TrimSpace(key)
+		if key == "" {
+			// Keep existing if empty
+			if cfg.Providers.StepFun.APIKey == "" {
+				return fmt.Errorf("API key cannot be empty")
+			}
+		} else {
+			cfg.Providers.StepFun.APIKey = key
+		}
+	case 2:
+		cfg.Providers.StepFun.APIKey = ""
+	case 3:
+		// Keep current
+	}
+
+	fmt.Println()
+	return nil
+}
+
 func configureDefaultModel(cfg *config.Config) error {
-	fmt.Println("3. Default Model Selection")
+	fmt.Println("4. Default Model Selection")
 	fmt.Println("   Fetching available models...")
 
 	ctx := context.Background()
@@ -277,6 +328,17 @@ func fetchAvailableModels(ctx context.Context, cfg *config.Config) ([]llm.Model,
 		if err != nil {
 			// OpenAI Compatible provider might be offline, don't fail
 			fmt.Printf("   Warning: OpenAI Compatible provider not available: %v\n", err)
+		} else {
+			allModels = append(allModels, models...)
+		}
+	}
+
+	if cfg.Providers.StepFun.IsEnabled() {
+		client := llm.NewStepFunClient(cfg.Providers.StepFun, cfg.Proxy, false)
+		models, err := client.ListModels(ctx)
+		if err != nil {
+			// StepFun provider might be offline, don't fail
+			fmt.Printf("   Warning: StepFun provider not available: %v\n", err)
 		} else {
 			allModels = append(allModels, models...)
 		}

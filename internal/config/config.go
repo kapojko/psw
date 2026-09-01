@@ -38,8 +38,9 @@ func Load() (*Config, error) {
 		if os.IsNotExist(err) {
 			return &Config{
 				Providers: ProvidersConfig{
-				OpenRouter:       &OpenRouterConfig{},
-				OpenAICompatible: &OpenAICompatibleConfig{},
+					OpenRouter:       &OpenRouterConfig{},
+					OpenAICompatible: &OpenAICompatibleConfig{},
+					StepFun:          &StepFunConfig{},
 				},
 			}, nil
 		}
@@ -57,6 +58,9 @@ func Load() (*Config, error) {
 	}
 	if cfg.Providers.OpenAICompatible == nil {
 		cfg.Providers.OpenAICompatible = &OpenAICompatibleConfig{}
+	}
+	if cfg.Providers.StepFun == nil {
+		cfg.Providers.StepFun = &StepFunConfig{}
 	}
 
 	return &cfg, nil

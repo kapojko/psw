@@ -41,6 +41,8 @@ func NewClient(providerConfig config.ProviderConfig, proxyConfig *config.ProxyCo
 		return NewOpenRouterClient(cfg, proxyConfig, verbose), nil
 	case *config.OpenAICompatibleConfig:
 		return NewOpenAICompatibleClient(cfg), nil
+	case *config.StepFunConfig:
+		return NewStepFunClient(cfg, proxyConfig, verbose), nil
 	default:
 		return nil, fmt.Errorf("unsupported provider type: %T", providerConfig)
 	}

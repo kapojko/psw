@@ -73,7 +73,8 @@ Run `psw -s` to set up:
 1. **Proxy** - Optional HTTP proxy for OpenRouter API
 2. **OpenRouter** - Enter API key from [openrouter.ai](https://openrouter.ai)
 3. **OpenAI Compatible** - Configure endpoint (and optional API key) for a local OpenAI-compatible server
-4. **Default Model** - Select from available models
+4. **StepFun** - Enter API key from [platform.stepfun.ai](https://platform.stepfun.ai)
+5. **Default Model** - Select from available models
 
 Press ENTER at any prompt to keep the existing value.
 
@@ -85,6 +86,7 @@ Config is saved to `%APPDATA%/psw/config.json`
 |----------|-------|
 | OpenRouter | API key from openrouter.ai |
 | OpenAI Compatible | Local OpenAI-compatible server |
+| StepFun | API key from platform.stepfun.ai (hardcoded endpoint) |
 
 ## How It Works
 

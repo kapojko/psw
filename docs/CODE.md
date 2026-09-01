@@ -18,7 +18,8 @@ psw/
 │   ├── llm/                  # LLM client implementations
 │   │   ├── client.go         # Client interface definition
 │   │   ├── openrouter.go     # OpenRouter provider
-│   │   └── openai-compatible.go  # OpenAI Compatible provider
+│   │   ├── openai-compatible.go  # OpenAI Compatible provider
+│   │   └── stepfun.go        # StepFun provider
 │   ├── powershell/           # PowerShell interaction (no script execution)
 │   │   ├── syntax.go         # Syntax validation via Parser API
 │   │   └── execute.go        # Command execution with output streaming
@@ -40,18 +41,19 @@ Entry point. Imports and executes the CLI package.
 ### internal/cli
 Handles all user interaction:
 - **flags.go**: Defines CLI flags (--setup, --copy, --model, --exec, --help)
-- **config.go**: Interactive setup wizard with 4 steps:
+- **config.go**: Interactive setup wizard with 5 steps:
   0. Proxy setup (optional HTTP proxy for OpenRouter)
   1. OpenRouter API key setup
   2. OpenAI Compatible endpoint / API key
-  3. Default model selection (fetches available models)
+  3. StepFun API key setup
+  4. Default model selection (fetches available models)
 - **clipboard.go**: Copy command to Windows clipboard using PowerShell
 - **root.go**: Main command execution - parses args, loads config, creates LLM client, sends request, parses response, checks syntax, optionally executes
 
 ### internal/config
 Manages application configuration:
 - **config.go**: Main Config struct with Load/Save methods. Config stored in `%APPDATA%/psw/config.json`
-- **providers.go**: Provider types (OpenRouter, OpenAI Compatible), ModelRef type with parsing
+- **providers.go**: Provider types (OpenRouter, OpenAI Compatible, StepFun), ModelRef type with parsing
 - **paths.go**: Cross-platform config directory resolution
 
 ### internal/llm
@@ -59,6 +61,7 @@ LLM client abstraction:
 - **client.go**: Client interface with ChatCompletion and ListModels methods
 - **openrouter.go**: OpenRouter implementation using go-openai library with direct HTTP for model listing
 - **openai-compatible.go**: OpenAI Compatible implementation (local server)
+- **stepfun.go**: StepFun implementation using go-openai library (API key only, hardcoded endpoint)
 
 ### internal/powershell
 PowerShell interaction utilities — syntax validation and command execution:
@@ -123,6 +126,9 @@ Lists all files recursively in the current directory
     "openai-compatible": {
       "api_key": "sk-...",
       "base_url": "http://127.0.0.1:1234/v1"
+    },
+    "stepfun": {
+      "api_key": "sk-step-..."
     }
   },
   "default_model": {

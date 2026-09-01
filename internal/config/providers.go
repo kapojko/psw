@@ -6,8 +6,9 @@ import "fmt"
 type ProviderType string
 
 const (
-	ProviderOpenRouter ProviderType = "openrouter"
+	ProviderOpenRouter       ProviderType = "openrouter"
 	ProviderOpenAICompatible ProviderType = "openai-compatible"
+	ProviderStepFun          ProviderType = "stepfun"
 )
 
 // ProviderConfig is the interface all provider configs must implement
@@ -36,8 +37,8 @@ func (c *OpenRouterConfig) GetDisplayName() string {
 
 // OpenAICompatibleConfig holds configuration for an OpenAI-compatible provider
 type OpenAICompatibleConfig struct {
-	APIKey   string `json:"api_key,omitempty"`
-	BaseURL  string `json:"base_url"`
+	APIKey  string `json:"api_key,omitempty"`
+	BaseURL string `json:"base_url"`
 }
 
 func (c *OpenAICompatibleConfig) GetType() ProviderType {
@@ -60,6 +61,30 @@ func (c *OpenAICompatibleConfig) GetBaseURL() string {
 	return c.BaseURL
 }
 
+// StepFunConfig holds StepFun-specific configuration (API key only)
+type StepFunConfig struct {
+	APIKey string `json:"api_key,omitempty"`
+}
+
+func (c *StepFunConfig) GetType() ProviderType {
+	return ProviderStepFun
+}
+
+func (c *StepFunConfig) IsEnabled() bool {
+	return c.APIKey != ""
+}
+
+func (c *StepFunConfig) GetDisplayName() string {
+	return "StepFun"
+}
+
+// GetBaseURL returns the hardcoded StepFun StepPlan API endpoint.
+// Note: the generic OpenAI-compatible endpoint (https://api.stepfun.ai/v1) is also
+// available, but this code targets the StepPlan API for chat completions.
+func (c *StepFunConfig) GetBaseURL() string {
+	return "https://api.stepfun.ai/step_plan/v1"
+}
+
 // ModelRef represents a reference to a specific model on a specific provider
 type ModelRef struct {
 	Provider ProviderType `json:"provider"`
@@ -76,7 +101,7 @@ func ParseModelRef(s string) (ModelRef, error) {
 	for i, c := range s {
 		if c == '/' {
 			provider := ProviderType(s[:i])
-			if provider != ProviderOpenRouter && provider != ProviderOpenAICompatible {
+			if provider != ProviderOpenRouter && provider != ProviderOpenAICompatible && provider != ProviderStepFun {
 				return ModelRef{}, fmt.Errorf("unknown provider: %s", provider)
 			}
 			return ModelRef{
@@ -90,8 +115,9 @@ func ParseModelRef(s string) (ModelRef, error) {
 
 // ProvidersConfig holds configuration for all providers
 type ProvidersConfig struct {
-	OpenRouter          *OpenRouterConfig `json:"openrouter,omitempty"`
-	OpenAICompatible    *OpenAICompatibleConfig `json:"openai-compatible,omitempty"`
+	OpenRouter       *OpenRouterConfig       `json:"openrouter,omitempty"`
+	OpenAICompatible *OpenAICompatibleConfig `json:"openai-compatible,omitempty"`
+	StepFun          *StepFunConfig          `json:"stepfun,omitempty"`
 }
 
 // GetProviders returns all provider configs
@@ -103,6 +129,9 @@ func (p *ProvidersConfig) GetProviders() []ProviderConfig {
 	if p.OpenAICompatible != nil {
 		providers = append(providers, p.OpenAICompatible)
 	}
+	if p.StepFun != nil {
+		providers = append(providers, p.StepFun)
+	}
 	return providers
 }
 
@@ -113,6 +142,8 @@ func (p *ProvidersConfig) GetProvider(providerType ProviderType) ProviderConfig 
 		return p.OpenRouter
 	case ProviderOpenAICompatible:
 		return p.OpenAICompatible
+	case ProviderStepFun:
+		return p.StepFun
 	default:
 		return nil
 	}
